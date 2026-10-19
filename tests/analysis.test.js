@@ -1,0 +1,21 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { analyzePoint, clusterPoints } from '../src/analysis.js';
+import { validateDataset, exportCsv, csvRowsToDataset } from '../src/io.js';
+import { createDemo } from '../src/data.js';
+
+const observations = Array.from({length:16},(_,i)=>({date:new Date(Date.UTC(2025,0,1+i*12)).toISOString().slice(0,10),los_mm:i<8?-i*.2:-1.6-(i-7)*3,coherence:.9}));
+const point={id:'P1',lat:13.778,lon:100.506,label:'Test',context:'hospital',observations};
+test('accelerating negative movement produces a review candidate',()=>{const a=analyzePoint(point,'2025-12-31',{minCoherence:.65,sensitivity:4}); assert.equal(a.status,'anomaly'); assert.ok(a.changeDate); assert.ok(a.velocity < -20);});
+test('stable linear movement does not trip the change detector',()=>{const a=analyzePoint({...point,observations:observations.map((o,i)=>({...o,los_mm:-i*.2}))},'2025-12-31',{minCoherence:.65,sensitivity:4}); assert.equal(a.status,'watch');});
+test('future changes cannot alter a historical result',()=>{const cutoff=observations[7].date; const a=analyzePoint(point,cutoff,{});const b=analyzePoint({...point,observations:observations.map((o,i)=>i>7?{...o,los_mm:-99999}:o)},cutoff,{});assert.deepEqual(a,b);assert.equal(a.samples.length,8);});
+test('low coherence remains insufficient rather than safe',()=>{assert.equal(analyzePoint({...point,observations:observations.map(o=>({...o,coherence:.2}))},'2025-12-31',{}).status,'insufficient');});
+test('spatial components link nearby anomalies only',()=>{const rows=[{id:'A',lat:13.778,lon:100.506,status:'anomaly'},{id:'B',lat:13.7781,lon:100.506,status:'anomaly'},{id:'C',lat:13.79,lon:100.52,status:'anomaly'},{id:'D',lat:13.778,lon:100.506,status:'watch'}];assert.deepEqual(clusterPoints(rows,100).map(c=>c.map(p=>p.id)),[['A','B'],['C']]);});
+const dataset={schemaVersion:1,source:{name:'Imported',kind:'insar',reference:'Stable reference R1; descending orbit 62',losConvention:'negative_away'},points:[point]};
+test('valid import retains explicit LOS reference',()=>{assert.equal(validateDataset(dataset).source.reference,dataset.source.reference);});
+test('duplicate dates and impossible coordinates are rejected',()=>{assert.throws(()=>validateDataset({...dataset,points:[{...point,lat:100}]}),/coordinates/i);assert.throws(()=>validateDataset({...dataset,points:[{...point,observations:[observations[0],observations[0]]}]}),/duplicate/i);});
+test('missing source reference and nonfinite samples are rejected',()=>{assert.throws(()=>validateDataset({...dataset,source:{...dataset.source,reference:''}}),/reference/i);assert.throws(()=>validateDataset({...dataset,points:[{...point,observations:[{...observations[0],los_mm:Infinity}]}]}),/finite/i);});
+test('CSV protects formula cells and quotes embedded delimiters',()=>{const csv=exportCsv([{id:'=1+1',reason:'a,b',label:'a"b'}]);assert.ok(csv.includes("'=1+1"));assert.ok(csv.includes('"a,b"'));assert.ok(csv.includes('"a""b"'));});
+test('CSV groups observations by point and rejects inconsistent coordinates',()=>{const row={id:'P1',lat:'13.778',lon:'100.506',label:'A',context:'road',date:'2025-01-01',los_mm:'0',coherence:'.8'};assert.equal(csvRowsToDataset([row,{...row,date:'2025-01-13',los_mm:'-2'}],dataset.source).points[0].observations.length,2);assert.throws(()=>csvRowsToDataset([row,{...row,lat:'14',date:'2025-01-13'}],dataset.source),/conflicting/i);assert.throws(()=>csvRowsToDataset([{...row,los_mm:''}],dataset.source),/empty/i);});
+test('impossible calendar dates are rejected',()=>assert.throws(()=>validateDataset({...dataset,points:[{...point,observations:[{date:'2025-02-30',los_mm:0,coherence:.8}]}]}),/date/i));
+test('demo contains valid synthetic data and quality failure examples',()=>{const d=validateDataset(createDemo());assert.equal(d.source.kind,'synthetic');assert.equal(d.points.length,126);const rows=d.points.map(p=>analyzePoint(p,'2025-09-23',{}));assert.ok(rows.some(r=>r.status==='insufficient'));assert.ok(rows.some(r=>r.status==='anomaly'));assert.ok(clusterPoints(rows).some(g=>g.length>1));});

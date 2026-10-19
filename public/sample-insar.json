@@ -1,0 +1,5 @@
+{
+  "schemaVersion": 1,
+  "source": {"name":"Synthetic schema example — not measured InSAR","kind":"synthetic","reference":"Illustrative reference origin; synthetic descending geometry; not real observations","losConvention":"negative_away"},
+  "points": [{"id":"EXAMPLE-01","lat":13.778,"lon":100.506,"label":"ตัวอย่างรูปแบบข้อมูลจำลอง","context":"other","observations":[{"date":"2025-01-01","los_mm":0,"coherence":0.9},{"date":"2025-01-13","los_mm":-0.2,"coherence":0.85},{"date":"2025-01-25","los_mm":-0.4,"coherence":0.88},{"date":"2025-02-06","los_mm":-0.6,"coherence":0.9},{"date":"2025-02-18","los_mm":-1,"coherence":0.86},{"date":"2025-03-02","los_mm":-3,"coherence":0.9},{"date":"2025-03-14","los_mm":-7,"coherence":0.88},{"date":"2025-03-26","los_mm":-10,"coherence":0.9}]}]
+}
