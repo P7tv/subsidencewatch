@@ -13,21 +13,41 @@ npm run dev
 
 Open the Local URL printed by Vite. Production: `npm run build`, then `npm run preview`. Test: `npm test`.
 
+## Demo day
+
+```sh
+npm ci
+npm run demo        # builds, serves on every network interface, prints the phone URL
+```
+
+- Laptop: open `http://localhost:4173/`. Phones: the printed `http://<lan-ip>:4173/`, or the **QR มือถือ** button in the app (shown when a LAN address was found).
+- Venue Wi-Fi often blocks device-to-device traffic. Share a hotspot from your own phone and connect the laptop to it; judges' phones join the same hotspot.
+- Map tiles need internet; points, overlay and analysis still work without them.
+- `?data=demo` opens straight into the synthetic method demo.
+
+Suggested 1–2 minute flow: tap **ดาวเทียมเห็นหลุม** (Sentinel-1 coherence loss at the collapse) → press ▶ to replay pre-event data up to 06:08 on the morning of the collapse → read the verdict line and the **วิธีวิเคราะห์ → ผลทดสอบกับ Sentinel-1 จริง** card.
+
 ## Included
 
-- Interactive OpenStreetMap map, point selection and quality legend.
+- **Real data by default**: 3,900 Sentinel-1 points (20 m, descending track 62), 64 pre-event acquisitions 2024-01-02 to 2025-09-23 23:08 UTC, from HyP3 + MintPy (`pipeline/`). Switch to the synthetic demo in the top bar.
+- **ดาวเทียมเห็นหลุม** overlay: coherence lost between the last pre-event pairs and pairs spanning the event. Strongest within 300 m of the Vajira MRT station at the collapse site, but other patches (construction, water) also appear; it confirms the location rather than finding it.
+- **Control-area calibration** (real data): the CUSUM alarm level is the 95th percentile of points more than 400 m from the event at the selected date, so ~5% false alarms by construction. The banner ranks the mean CUSUM within 60 m of the collapse against ~110 m control cells and states how many ordinary cells are as anomalous.
+- Synthetic demo keeps the first-alert lead time (`firstAlert`), labelled as synthetic.
 - Date cutoff and playback; every calculation uses only observations on or before the selected date.
-- LOS displacement chart; accepted and rejected coherence observations are distinguished.
-- QC filtering, linear velocity and one-sided residual CUSUM.
-- Spatial connected components at 180 m; this implementation is **not HDBSCAN**.
-- Searchable, filterable inspection queue with illustrative scores.
-- JSON/CSV import with validation; data is processed locally in the browser, not uploaded.
-- CSV report export includes cutoff, thresholds, source and limitations.
-- Responsive Thai interface and keyboard-accessible queue.
+- LOS chart with fitted baseline, first CUSUM exceedance and event date; accepted and rejected observations distinguished.
+- QC filtering, linear velocity and one-sided residual CUSUM; spatial connected components at 180 m (**not HDBSCAN**).
+- Searchable inspection queue, JSON/CSV import with validation (processed locally), CSV report export with thresholds and limitations.
+- Responsive Thai interface down to 360 px.
 
-## Data is synthetic by default
+## Real-data result (retrospective, pre-event data only)
 
-All 126 bundled points, 44 acquisition dates, values and anomalies are synthetic. They are not the actual 44-scene Sentinel-1 inventory mentioned in the prior chat. They do not establish that precursor motion was present before the Samsen event. Map tiles show real geography, but the motion points and their context labels are generated examples. The central hospital marker is an approximate study-area reference. Context labels are manually supplied categories, not a verified hospital service or engineering asset registry.
+- The 60 m area around the collapse ranks above ~93–95% of control cells from July 2025, but ~5–7% of ordinary cells are as anomalous: not usable as a warning.
+- No accelerating subsidence in the weeks before the collapse. The 06:08 acquisition moves the whole area together (likely atmosphere).
+- 20–40 m InSAR confirms the location after the event; early warning would need building-scale PS-InSAR, more geometries and tunnel instrumentation.
+
+## Synthetic demo data
+
+The synthetic mode has 126 generated points around the collapse with an injected subsidence signal; its 186-day lead time demonstrates the method only. Context labels in synthetic mode are generated; in real mode they come from OpenStreetMap plus an approximate Vajira Hospital radius.
 
 ## Import contract
 
@@ -73,6 +93,6 @@ Baseline is recomputed at each cutoff, so change dates and classifications can c
 
 ## Layout
 
-`src/analysis.js`: pure calculation. `src/io.js`: validated input and safe CSV. `src/data.js`: synthetic generator. `src/main.js`: UI/map/chart. `src/style.css`: responsive interface. `tests/analysis.test.js`: regression tests. No backend or credentials required. Leaflet tiles and optional Google Fonts use network access; points and analysis remain available if tiles fail.
+`src/analysis.js`: pure calculation incl. control calibration. `src/io.js`: validated input, compact bundles and safe CSV. `src/data.js`: synthetic generator. `src/event.js`: event date/location. `src/main.js`: UI/map/chart. `public/data/`: real-data bundle and overlay from `pipeline/05_web_bundle.py`. `scripts/demo.mjs`: LAN demo server. `src/style.css`: responsive interface. `tests/analysis.test.js`: regression tests. No backend or credentials required. Leaflet tiles and optional Google Fonts use network access; points and analysis remain available if tiles fail.
 
 © Project prototype. Code dependencies retain their respective licenses. Map data © OpenStreetMap contributors.

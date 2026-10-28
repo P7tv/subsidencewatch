@@ -1,0 +1,2 @@
+asf_search==14.1.0
+hyp3_sdk==7.7.8
