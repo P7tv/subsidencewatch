@@ -1,0 +1,12 @@
+node_modules
+pipeline
+output_videos
+output_slides
+presentation_assets
+presentation_assets.zip
+.git
+.superpowers
+.openai
+docs
+scripts
+tests
