@@ -12,3 +12,6 @@ __pycache__/
 .env
 .env.*
 .superpowers/
+output_videos/*.mp4
+output_videos/*.jpg
+

@@ -97,3 +97,4 @@ Total: 50.0s (1,500 frames @ 30 fps)
 3. **Dual Export Deliverables:**
    - Master: `output_videos/subsidencewatch_demo_50s.mp4` (with subtle tech ambient sound design)
    - Muted: `output_videos/subsidencewatch_demo_50s_muted.mp4` (for live presentation speaking)
+

@@ -76,3 +76,4 @@
 
 - [ ] **Step 3: Commit plan and deliverables**
   - Run git commit.
+
