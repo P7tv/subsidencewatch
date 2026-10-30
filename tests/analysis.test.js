@@ -230,3 +230,18 @@ test("risk levels: priority needs change-point, significant acceleration and an 
   const stable = analyzePoint({ ...point, observations: observations.map((o, i) => ({ ...o, los_mm: -i * 0.2 })) }, "2025-12-31");
   assert.equal(riskLevels([stable], event, [event])[0].level, "baseline");
 });
+
+test("doubling the cadence does not double CUSUM per unit time", () => {
+  const series = (step) =>
+    Array.from({ length: Math.round(360 / step) }, (_, i) => {
+      const day = i * step;
+      return {
+        date: new Date(Date.UTC(2025, 0, 1 + day)).toISOString().slice(0, 10),
+        los_mm: day < 180 ? Math.sin(i) * 0.3 : -(day - 180) * 0.1,
+        coherence: 0.9,
+      };
+    });
+  const at = (step) => analyzePoint({ ...point, observations: series(step) }, "2026-01-01").cusum;
+  const ratio = at(6) / at(12);
+  assert.ok(ratio > 0.7 && ratio < 1.4, `ratio ${ratio}`);
+});

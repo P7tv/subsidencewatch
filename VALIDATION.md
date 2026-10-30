@@ -1,7 +1,7 @@
 # Validation · 26 October 2026
 
 ## Automated
-- `npm test`: 22 passing tests (detector, acceleration fit, risk levels, no temporal leakage, first alert, control threshold, event contrast, compact bundle, import validation, CSV safety).
+- `npm test`: 23 passing tests (detector, acceleration fit, risk levels, no temporal leakage, first alert, control threshold, event contrast, compact bundle, import validation, CSV safety).
 - `npm run build`: successful Vite static build.
 
 ## Real-data pipeline (pipeline/)
@@ -16,10 +16,11 @@
 - `npm run demo` serves on all interfaces and bakes the LAN URL into the QR button; page and data load via localhost.
 
 ## Added 30 October 2026
-- Collapse timing: first emergency call 07:08 (Matichon timeline); the proposal reports surface subsidence from ~05:00, so the 06:08 acquisition may show the onset. With cutoff 17 Sep the event area still ranks above ~95% of control cells (5.2% of cells as high).
+- Collapse timing: first emergency call 07:08 (Matichon timeline); the proposal reports surface subsidence from ~05:00, so the 06:08 acquisition may show the onset. With cutoff 17 Sep the event area still ranks above ~93% of control cells (6.9% of cells as high), after the cadence correction.
 - Daily control-median removal tested and rejected: cells as anomalous as the event rose from 6.9% to 12.9%.
-- Detection floor (`npm run floor`): ~50% detection for +10 mm/yr over 8 months; false alarms 5.1% at the calibrated threshold.
-- Risk levels at cutoff 17 Sep: 2 priority, 341 inspect, 123 watch, 3,418 baseline, 16 insufficient.
+- Detection floor (`npm run floor`): ~40% detection for +10 mm/yr over 8 months, ~95% for +20 mm/yr; false alarms 4.7% at the calibrated threshold.
+- Risk levels at cutoff 17 Sep: 2 priority, 335 inspect, 118 watch, 3,429 baseline, 16 insufficient.
+- CUSUM steps weighted by time since the previous sample (cadence correction), with a regression test; all numbers above are after it.
 - Pipeline edits (docstrings, NaN guard, pinned 5x1 reference, run commands) were syntax-checked only; MintPy was not rerun.
 
 ## Not verified

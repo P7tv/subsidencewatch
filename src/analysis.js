@@ -40,11 +40,16 @@ export function analyzePoint(point, cutoff, { minCoherence = 0.65, sensitivity =
   let running = 0,
     peak = 0,
     changeDate = null;
-  for (const o of samples.slice(n)) {
-    running = Math.max(0, running + (predict(o) - o.los_mm) / sigma - 0.5);
+  // Each step counts in proportion to the time since the previous accepted sample (12 days = 1), so a
+  // denser cadence (Sentinel-1C from April 2025: 6 days) does not build evidence faster per unit time.
+  const later = samples.slice(n);
+  later.forEach((o, i) => {
+    const prev = i ? later[i - 1] : samples[n - 1];
+    const w = Math.min(1, (Date.parse(o.date) - Date.parse(prev.date)) / DAY / 12);
+    running = Math.max(0, running + w * ((predict(o) - o.los_mm) / sigma - 0.5));
     peak = Math.max(peak, running);
     if (running >= sensitivity && !changeDate) changeDate = o.date;
-  }
+  });
   const status = changeDate ? "anomaly" : "watch";
   const strength = Math.min(1, peak / (sensitivity * 3));
   const contextWeight = { hospital: 1, road: 0.65, building: 0.4, other: 0.2 }[point.context] ?? 0.2;

@@ -41,18 +41,18 @@ Suggested 1–2 minute flow: tap **ดาวเทียมเห็นหลุ
 
 ## Real-data result (retrospective, pre-event data only)
 
-- The 60 m area around the collapse ranks above ~93–95% of control cells from July 2025, but ~5–7% of ordinary cells are as anomalous: not usable as a warning.
-- No accelerating subsidence in the weeks before the collapse. The 06:08 acquisition moves the whole area together (likely atmosphere). Surface subsidence was reportedly first seen around 05:00 (the first emergency call was logged at 07:08), so the 06:08 image may already show the onset. Without it (cutoff 17 Sep) the event area still ranks above ~95% of control cells, so the conclusion does not depend on it. Removing the daily median of the control area (a cheap stand-in for ERA5) made the event stand out less (12.9% vs 6.9% of cells as anomalous) and is not used.
-- Detection floor (`npm run floor`, extra subsidence injected into real control-point noise, calibrated threshold, cutoff 17 Sep): an extra 10 mm/yr LOS sustained for 8 months is caught about half the time, 20 mm/yr for 8 months or 40 mm/yr for 4 months about 75–95%, and anything shorter than 2 months needs over 100 mm/yr. A signal below this would have been missed, so "no warning" here means "no change larger than the floor", not "no change".
+- The 60 m area around the collapse ranks above ~89–93% of control cells from July 2025, but ~7–11% of ordinary cells are as anomalous: not usable as a warning.
+- No accelerating subsidence in the weeks before the collapse. The 06:08 acquisition moves the whole area together (likely atmosphere). Surface subsidence was reportedly first seen around 05:00 (the first emergency call was logged at 07:08), so the 06:08 image may already show the onset. Without it (cutoff 17 Sep) the event area still ranks above ~93% of control cells, so the conclusion does not depend on it. Removing the daily median of the control area (a cheap stand-in for ERA5) made the event stand out less (measured before the cadence correction: 12.9% vs 6.9% of cells as anomalous) and is not used.
+- Detection floor (`npm run floor`, extra subsidence injected into real control-point noise, calibrated threshold, cutoff 17 Sep): an extra 10 mm/yr LOS sustained for 8 months is caught ~40% of the time, 20 mm/yr for 8 months ~95%, 40 mm/yr for 4 months about half, and a signal shorter than 2 months needs well over 100 mm/yr. A signal below this would have been missed, so "no warning" here means "no change larger than the floor", not "no change".
 
 | Extra LOS rate | onset 60 d | 120 d | 240 d before cutoff |
 |---|---|---|---|
-| 5 mm/yr | 5% | 7% | 17% |
-| 10 mm/yr | 6% | 10% | 49% |
-| 20 mm/yr | 7% | 23% | 93% |
-| 40 mm/yr | 11% | 72% | 98% |
-| 80 mm/yr | 26% | 98% | 99% |
-| 160 mm/yr | 87% | 99% | 99% |
+| 5 mm/yr | 5% | 7% | 14% |
+| 10 mm/yr | 6% | 9% | 41% |
+| 20 mm/yr | 7% | 16% | 95% |
+| 40 mm/yr | 9% | 54% | 99% |
+| 80 mm/yr | 18% | 98% | 99% |
+| 160 mm/yr | 65% | 99% | 99% |
 
 - 20–40 m InSAR confirms the location after the event; early warning would need building-scale PS-InSAR, more geometries and tunnel instrumentation.
 
@@ -87,12 +87,12 @@ CSV columns: `id,lat,lon,label,context,date,los_mm,coherence`. One row per obser
 
 1. Filter by date cutoff, then coherence (default ≥ 0.65); require ≥8 accepted observations.
 2. Fit ordinary least-squares baseline to first half (minimum four observations); fit full accepted series for velocity in mm/year.
-3. On the later half compute `S = max(0, S + (predicted_LOS - observed_LOS)/sigma - 0.5)`. Sigma is baseline RMSE with 1.5 mm floor. First `S >= threshold` (default 4) marks an illustrative candidate.
+3. On the later half compute `S = max(0, S + w * ((predicted_LOS - observed_LOS)/sigma - 0.5))` with `w = min(1, days since previous sample / 12)`. Sigma is baseline RMSE with 1.5 mm floor. First `S >= threshold` (default 4) marks an illustrative candidate.
 4. Group anomaly points by transitive neighbour links ≤180 m, keeping isolated candidates. This is not a density clustering model.
 5. Risk levels (proposal 4.2, adapted): **Priority** = change-point, acceleration away from the satellite significant at 95% (quadratic fit), and within 100 m of a known excavation site (only the Vajira PP19 station is listed in `src/event.js`; tunnel alignment and progress would come from MRTA); **Inspect** = change-point or ≥5 anomalous points within 50 m; **Watch** = LOS velocity more than 2 robust SD below the control-area median (never assigned without a control area); **Baseline** = the rest. The queue and CSV export sort by level; the CSV includes the level, its action and the acceleration with its standard error. Soil-zone baselines from the proposal are not available, so the control area stands in for them.
 6. Score candidates: `100 * (0.7 * min(1, maxCUSUM / (3 * threshold)) + 0.3 * contextWeight)`, rounded. Context weights: hospital 1, road .65, building .4, other .2. These are illustrative choices, not empirical probabilities. Low-quality points receive no score.
 
-Baseline is recomputed at each cutoff, so change dates and classifications can change as accepted observations grow. CUSUM values here use the irregular satellite acquisition sequence without a sampling-interval correction; in the real data the cadence doubles (12 → 6 days) from April 2025, which is inside the detector's later half, so CUSUM builds faster there per unit of time. The control-area threshold sees the same cadence, which keeps comparisons between points fair but not comparisons across dates. In real mode only the calibrated threshold is offered: a fixed threshold of 4 flags over half the points. The real LOS comes from one MintPy inversion over the whole pre-event stack (reference date 2025-07-25), so the date cutoff limits which values are used, not which acquisitions shaped them. This detector only examines negative departures from its linear baseline; it does not cover positive changes or all deformation regimes. Thresholds have not been calibrated. Velocity is LOS, **not vertical subsidence**; “watch” and “insufficient” never establish safety. This tool does not predict collapse, identify construction causality or provide an operational alert. A single historical event cannot establish general precision/recall.
+Baseline is recomputed at each cutoff, so change dates and classifications can change as accepted observations grow. Each CUSUM step is weighted by the time since the previous accepted sample (12 days = 1, capped at 1), so the doubled Sentinel-1C cadence from April 2025 does not build evidence faster per unit time. In real mode only the calibrated threshold is offered: a fixed threshold of 4 flags over half the points. The real LOS comes from one MintPy inversion over the whole pre-event stack (reference date 2025-07-25), so the date cutoff limits which values are used, not which acquisitions shaped them. This detector only examines negative departures from its linear baseline; it does not cover positive changes or all deformation regimes. Thresholds have not been calibrated. Velocity is LOS, **not vertical subsidence**; “watch” and “insufficient” never establish safety. This tool does not predict collapse, identify construction causality or provide an operational alert. A single historical event cannot establish general precision/recall.
 
 ## Replace the demo with real evidence
 
