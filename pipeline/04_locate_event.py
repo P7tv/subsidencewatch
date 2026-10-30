@@ -15,7 +15,7 @@ from pyproj import Transformer
 
 import config
 
-DATA = Path(__file__).parent / "data"
+DATA = config.DATA
 EVENT = config.EVENT_DATE.replace("-", "")
 
 

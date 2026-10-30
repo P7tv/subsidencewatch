@@ -28,3 +28,29 @@ Post-event acquisitions (29 Sep onward) are processed only to locate the sinkhol
 9. **Web bundle** — `.venv/bin/python 05_web_bundle.py` → `public/data/samsen-real.json` (1.9 MB) and `coherence-loss.png`.
 
 Disk: keep ≥ 15 GB free. Products are clipped to the AOI right after download.
+
+## Ascending track 172 (consistency check, proposal 2.5)
+
+Prepared and dry-run only; not yet submitted or processed. Every script takes `SW_TRACK=asc` and then uses burst
+`172_367372_IW2`, `data-asc/`, HyP3 project `samsen-172-*` and writes `public/data/samsen-real-asc.json`, so the
+descending results are never touched.
+
+| Item | Value |
+|---|---|
+| Burst | `172_367372_IW2`, ascending, VV; covers 83% of the AOI, event ~1 km inside the edge |
+| Acquisitions | 46, 2024-01-10 to 2025-10-07, 12-day cadence |
+| Last pre-event | 2025-09-13 11:29 UTC (11 days before the collapse) |
+| Network | 132 pairs per looks → 132 credits for 5x1 alone, 264 for both |
+
+```sh
+SW_TRACK=asc .venv/bin/python 01_submit.py            # dry run
+SW_TRACK=asc .venv/bin/python 01_submit.py --submit   # spends credits
+SW_TRACK=asc .venv/bin/python 02_download.py --looks 5x1
+SW_TRACK=asc .venv/bin/python 04_locate_event.py
+mkdir -p mintpy_asc_5x1 && cd mintpy_asc_5x1 && ../tools/mintpy-env/bin/smallbaselineApp.py ../samsen_asc_5x1.cfg && cd ..
+SW_TRACK=asc .venv/bin/python 03_export.py mintpy_asc_5x1 data-asc/samsen-insar-5x1.json
+SW_TRACK=asc .venv/bin/python 05_web_bundle.py
+```
+
+The app does not load the ascending bundle yet. Compare it with the descending result first: the same location
+should show a coherence loss, and the event contrast should point the same way.

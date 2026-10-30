@@ -25,7 +25,7 @@ from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
 import config
 
-DATA = Path(__file__).parent / "data"
+DATA = config.DATA
 ROAD_TYPES = "trunk|primary|secondary|tertiary"
 
 
@@ -167,7 +167,7 @@ def main():
             "name": f"Sentinel-1 burst {config.BURST_ID} · HyP3 ISCE2 + MintPy ({args.mintpy_dir.name})",
             "kind": "insar",
             "reference": (
-                f"Descending track 62, LOS, {abs(dx):.0f} m pixels. Reference pixel {ref}, reference date {iso(attrs.get('REF_DATE', dates[0].replace('-', '')))}. "
+                f"{config.TRACK_LABEL}, LOS, {abs(dx):.0f} m pixels. Reference pixel {ref}, reference date {iso(attrs.get('REF_DATE', dates[0].replace('-', '')))}. "
                 f"{ts_file}; no tropospheric correction; temporal coherence >= {args.min_tcoh}. "
                 f"Acquisitions {dates[0]} to {dates[-1]} (UTC dates; pre-event only)."
             ),

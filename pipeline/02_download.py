@@ -21,7 +21,7 @@ from rasterio.warp import Resampling, reproject, transform_bounds
 
 import config
 
-DATA = Path(__file__).parent / "data"
+DATA = config.DATA
 # Files MintPy's prep_hyp3 reads for a HyP3 ISCE burst product.
 LAYERS = ["unw_phase", "corr", "conncomp", "dem", "lv_theta", "lv_phi"]
 
