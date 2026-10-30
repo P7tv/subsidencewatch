@@ -117,11 +117,11 @@ server.listen(PORT, async () => {
         position: fixed;
         background: #FFFFFF;
         border: 1.5px solid #E2E8F0;
-        box-shadow: 0 24px 50px -10px rgba(15, 23, 42, 0.22), 0 0 0 1px rgba(0, 0, 0, 0.04);
-        border-radius: 18px;
-        padding: 20px 24px;
+        box-shadow: 0 30px 65px -12px rgba(15, 23, 42, 0.32), 0 0 0 1px rgba(0, 0, 0, 0.05);
+        border-radius: 20px;
+        padding: 22px 28px;
         color: #0F172A;
-        font-family: Inter, -apple-system, BlinkMacSystemFont, "IBM Plex Sans Thai", sans-serif;
+        font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         z-index: 999990;
         opacity: 0;
         transform: translateY(12px);
@@ -137,16 +137,22 @@ server.listen(PORT, async () => {
     // ─────────────────────────────────────────────────────────────
     // CALLOUT 1: ACT 1 - SATELLITE RADAR INGESTION (Top-Left above map)
     // ─────────────────────────────────────────────────────────────
-    createCallout("callout-1", "left: 280px; top: 120px; width: 440px;", `
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.7);"></span>
-        <span style="font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #164B45; text-transform: uppercase;">01 · SATELLITE INGESTION</span>
+    createCallout("callout-1", "left: 270px; top: 110px; width: 540px;", `
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#164B45" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 7 9 3 5 7l4 4"/>
+          <path d="m17 11 4 4-4 4-4-4"/>
+          <path d="m8 12 4 4 6-6-4-4Z"/>
+          <path d="m16 8 3-3"/>
+          <path d="M9 21a6 6 0 0 0-6-6"/>
+        </svg>
+        <span style="font-size: 13px; font-weight: 800; letter-spacing: 1.6px; color: #164B45; text-transform: uppercase;">01 · RADAR SATELLITE SCAN</span>
       </div>
-      <div style="font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.4px; line-height: 1.3; margin-bottom: 4px;">
-        3,900 จุดตรวจวัด Sentinel-1 InSAR
+      <div style="font-size: 27px; font-weight: 850; color: #0F172A; letter-spacing: -0.6px; line-height: 1.25; margin-bottom: 6px;">
+        3,900 Millimeter Precision Points
       </div>
-      <div style="font-size: 14.5px; font-weight: 500; color: #475569; line-height: 1.45;">
-        ครอบคลุมพื้นที่สามเสน 5 × 5 กม. · ตรวจจับการเคลื่อนตัวระดับมิลลิเมตรจากภาพเรดาร์ C-band
+      <div style="font-size: 16.5px; font-weight: 500; color: #475569; line-height: 1.5;">
+        Sentinel-1 satellite scans Bangkok through clouds and rain every 6–12 days across the 5 × 5 km Samsen district.
       </div>
       <!-- Pointer pointing down -->
       <div style="position: absolute; bottom: -11px; left: 60px; width: 20px; height: 11px; overflow: hidden;">
@@ -157,16 +163,19 @@ server.listen(PORT, async () => {
     // ─────────────────────────────────────────────────────────────
     // CALLOUT 2: ACT 2 - TIMELINE REPLAY (Bottom-Left beside scrubber)
     // ─────────────────────────────────────────────────────────────
-    createCallout("callout-2", "left: 380px; bottom: 80px; width: 480px;", `
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #EF4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);"></span>
-        <span style="font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #991B1B; text-transform: uppercase;">02 · INCIDENT REPLAY (64 PASSES)</span>
+    createCallout("callout-2", "left: 360px; bottom: 85px; width: 550px;", `
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span style="font-size: 13px; font-weight: 800; letter-spacing: 1.6px; color: #991B1B; text-transform: uppercase;">02 · 64 HISTORICAL SATELLITE PASSES</span>
       </div>
-      <div style="font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.4px; line-height: 1.3; margin-bottom: 4px;">
-        Replay ย้อนหลัง 64 วันถ่ายดาวเทียม
+      <div style="font-size: 27px; font-weight: 850; color: #0F172A; letter-spacing: -0.6px; line-height: 1.25; margin-bottom: 6px;">
+        Tracking Ground Motion Over Time
       </div>
-      <div style="font-size: 14.5px; font-weight: 500; color: #475569; line-height: 1.45;">
-        สังเกตพิกัดถนนสามเสน (วงแหวนสีแดงกะพริบ) เริ่มส่งสัญญาณการทรุดตัวสะสมชัดเจน
+      <div style="font-size: 16.5px; font-weight: 500; color: #475569; line-height: 1.5;">
+        Replaying months of radar scans before collapse — notice the pulsing red marker indicating continuous subsidence.
       </div>
       <!-- Pointer pointing down-left -->
       <div style="position: absolute; bottom: 20px; left: -11px; width: 11px; height: 20px; overflow: hidden;">
@@ -177,16 +186,19 @@ server.listen(PORT, async () => {
     // ─────────────────────────────────────────────────────────────
     // CALLOUT 3: ACT 3 - LOS DISPLACEMENT & CUSUM (Pointing right at chart)
     // ─────────────────────────────────────────────────────────────
-    createCallout("callout-3", "right: 480px; top: 520px; width: 460px;", `
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #D97706; box-shadow: 0 0 8px rgba(217, 119, 6, 0.7);"></span>
-        <span style="font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #9A3412; text-transform: uppercase;">03 · CUSUM ANOMALY DETECTION</span>
+    createCallout("callout-3", "right: 480px; top: 510px; width: 540px;", `
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D97706" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+          <polyline points="17 6 23 6 23 12"/>
+        </svg>
+        <span style="font-size: 13px; font-weight: 800; letter-spacing: 1.6px; color: #9A3412; text-transform: uppercase;">03 · EARLY ANOMALY WARNING</span>
       </div>
-      <div style="font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.4px; line-height: 1.3; margin-bottom: 4px;">
-        อัตราการทรุดตัวสะสม -6.9 mm/yr
+      <div style="font-size: 27px; font-weight: 850; color: #0F172A; letter-spacing: -0.6px; line-height: 1.25; margin-bottom: 6px;">
+        Sinking at -6.9 mm / year
       </div>
-      <div style="font-size: 14.5px; font-weight: 500; color: #475569; line-height: 1.45;">
-        ตรวจพบสัญญาณเตือนก่อนวันเกิดเหตุจริง · บริเวณนี้ผิดปกติกว่า 93% ของพื้นที่ควบคุม
+      <div style="font-size: 16.5px; font-weight: 500; color: #475569; line-height: 1.5;">
+        CUSUM detector flags abnormal subsidence months in advance — more anomalous than 93% of surrounding control areas.
       </div>
       <!-- Pointer pointing right -->
       <div style="position: absolute; top: 32px; right: -11px; width: 11px; height: 20px; overflow: hidden;">
@@ -197,16 +209,20 @@ server.listen(PORT, async () => {
     // ─────────────────────────────────────────────────────────────
     // CALLOUT 4: ACT 4 - ACTIONABLE INSPECTION QUEUE (Pointing down at table)
     // ─────────────────────────────────────────────────────────────
-    createCallout("callout-4", "left: 450px; top: 180px; width: 490px;", `
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #0284C7; box-shadow: 0 0 8px rgba(2, 132, 199, 0.7);"></span>
-        <span style="font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #0369A1; text-transform: uppercase;">04 · ACTIONABLE CITY SAFETY</span>
+    createCallout("callout-4", "left: 420px; top: 160px; width: 550px;", `
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+          <polyline points="9 14 12 17 17 12"/>
+        </svg>
+        <span style="font-size: 13px; font-weight: 800; letter-spacing: 1.6px; color: #0369A1; text-transform: uppercase;">04 · ACTIONABLE CITY SAFETY</span>
       </div>
-      <div style="font-size: 22px; font-weight: 800; color: #0F172A; letter-spacing: -0.4px; line-height: 1.3; margin-bottom: 4px;">
-        จัดคิวลงตรวจ 162 จุดเสี่ยง (Inspection Queue)
+      <div style="font-size: 27px; font-weight: 850; color: #0F172A; letter-spacing: -0.6px; line-height: 1.25; margin-bottom: 6px;">
+        162 Ranked Inspection Targets
       </div>
-      <div style="font-size: 14.5px; font-weight: 500; color: #475569; line-height: 1.45;">
-        ถ่วงน้ำหนักความสำคัญ รพ. และถนนใหญ่ · พร้อม Export CSV ให้วิศวกร กทม. นำไปใช้งานทันที
+      <div style="font-size: 16.5px; font-weight: 500; color: #475569; line-height: 1.5;">
+        Prioritizes hospitals and major roads. 1-click CSV export ready for city engineering crews and field radar trucks.
       </div>
       <!-- Pointer pointing down -->
       <div style="position: absolute; bottom: -11px; left: 80px; width: 20px; height: 11px; overflow: hidden;">
@@ -215,14 +231,14 @@ server.listen(PORT, async () => {
     `);
 
     // ─────────────────────────────────────────────────────────────
-    // ACT 5: EXECUTIVE STUDIO OUTRO
+    // ACT 5: EXECUTIVE STUDIO OUTRO (BKK Dark Theme matching slides)
     // ─────────────────────────────────────────────────────────────
     const outro = document.createElement("div");
     outro.id = "doc-outro";
     outro.style.cssText = `
       position: fixed;
       inset: 0;
-      background: #FFFFFF;
+      background: #0B1325;
       z-index: 1000000;
       display: flex;
       flex-direction: column;
@@ -231,23 +247,44 @@ server.listen(PORT, async () => {
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.8s ease;
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "IBM Plex Sans Thai", sans-serif;
-      color: #0F172A;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: #FFFFFF;
       text-align: center;
     `;
     outro.innerHTML = `
-      <div style="width: 72px; height: 72px; border-radius: 22px; background: #164B45; display: grid; place-items: center; margin-bottom: 24px; box-shadow: 0 20px 40px rgba(22, 75, 69, 0.25);">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+      <div style="width: 80px; height: 80px; border-radius: 24px; background: rgba(0, 229, 255, 0.15); border: 2px solid #00E5FF; display: grid; place-items: center; margin-bottom: 24px; box-shadow: 0 0 40px rgba(0, 229, 255, 0.35);">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#00E5FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M13 7 9 3 5 7l4 4"/>
+          <path d="m17 11 4 4-4 4-4-4"/>
+          <path d="m8 12 4 4 6-6-4-4Z"/>
+          <path d="m16 8 3-3"/>
+          <path d="M9 21a6 6 0 0 0-6-6"/>
+        </svg>
       </div>
-      <h1 style="font-size: 50px; font-weight: 900; letter-spacing: -1.2px; margin: 0 0 12px 0; color: #0F172A;">
-        SubsidenceWatch
+      <h1 style="font-size: 58px; font-weight: 900; letter-spacing: -1.5px; margin: 0 0 14px 0; color: #FFFFFF;">
+        SubsidenceWatch <span style="color: #00E5FF; text-shadow: 0 0 35px rgba(0, 229, 255, 0.6);">BKK</span>
       </h1>
-      <p style="font-size: 21px; color: #475569; max-width: 680px; line-height: 1.6; margin: 0 0 32px 0; font-weight: 500;">
-        ต้นแบบการสำรวจหลักฐานการเคลื่อนตัวของพื้นดิน<br>และจัดลำดับจุดลงตรวจ · พื้นที่สามเสน–วชิรพยาบาล
+      <p style="font-size: 23px; color: #94A3B8; max-width: 720px; line-height: 1.5; margin: 0 0 32px 0; font-weight: 500;">
+        Satellite-Based Ground-Motion Monitoring & Early Warning
       </p>
-      <div style="display: flex; gap: 16px; align-items: center; background: #F8FAFC; padding: 14px 28px; border-radius: 999px; border: 1.5px solid #E2E8F0; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
-        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #10B981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);"></span>
-        <span style="font-size: 16px; font-weight: 600; color: #1E293B; font-family: monospace;">github.com/P7tv/subsidencewatch</span>
+
+      <div style="display: flex; gap: 20px; margin-bottom: 36px;">
+        <div style="background: rgba(15, 30, 54, 0.9); border: 1.5px solid rgba(0, 229, 255, 0.3); padding: 12px 24px; border-radius: 999px; font-size: 16px; font-weight: 700; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #00E5FF;">3,900</span> Radar Points
+        </div>
+        <div style="background: rgba(15, 30, 54, 0.9); border: 1.5px solid rgba(239, 68, 68, 0.35); padding: 12px 24px; border-radius: 999px; font-size: 16px; font-weight: 700; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #EF4444;">-6.9 mm/yr</span> Anomaly Detected
+        </div>
+        <div style="background: rgba(15, 30, 54, 0.9); border: 1.5px solid rgba(16, 185, 129, 0.35); padding: 12px 24px; border-radius: 999px; font-size: 16px; font-weight: 700; color: #FFFFFF; display: flex; align-items: center; gap: 8px;">
+          <span style="color: #10B981;">162</span> Field Targets
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px; align-items: center; background: rgba(15, 30, 54, 0.8); padding: 14px 28px; border-radius: 999px; border: 1.5px solid #00E5FF; box-shadow: 0 0 30px rgba(0, 229, 255, 0.25);">
+        <span style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #10B981; box-shadow: 0 0 12px #10B981;"></span>
+        <span style="font-size: 18px; font-weight: 700; color: #00E5FF; font-family: monospace;">https://subsidencewatch.vercel.app</span>
+        <span style="color: #64748B;">·</span>
+        <span style="font-size: 15px; font-weight: 700; color: #CBD5E1; letter-spacing: 0.5px;">GeoHackathon 2026 (GISTDA)</span>
       </div>
     `;
     document.body.appendChild(outro);
