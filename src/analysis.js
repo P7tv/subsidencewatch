@@ -133,3 +133,57 @@ export function eventContrast(rows, event, { radius = 60, minDistance = 400, cel
     asHigh: means.filter((m) => m >= eventMean).length / means.length,
   };
 }
+// Quadratic fit LOS = a + b t + c t^2 (t in years); returns c in mm/yr^2 and its standard error.
+export function acceleration(samples) {
+  if (samples.length < 6) return null;
+  const start = Date.parse(samples[0].date),
+    t = samples.map((o) => (Date.parse(o.date) - start) / DAY / 365.25),
+    y = samples.map((o) => o.los_mm);
+  // Normal equations for [1, t, t^2], solved by Cramer's rule on the 3x3 system.
+  const s = (f) => t.reduce((a, ti, i) => a + f(ti, i), 0);
+  const m = [
+    [t.length, s((x) => x), s((x) => x * x)],
+    [s((x) => x), s((x) => x * x), s((x) => x ** 3)],
+    [s((x) => x * x), s((x) => x ** 3), s((x) => x ** 4)],
+  ];
+  const r = [s((x, i) => y[i]), s((x, i) => x * y[i]), s((x, i) => x * x * y[i])];
+  const det = (a) =>
+    a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
+    a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
+    a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0]);
+  const d = det(m);
+  if (!d) return null;
+  const col = (k) => det(m.map((row, i) => row.map((v, j) => (j === k ? r[i] : v))));
+  const [a, b, c] = [0, 1, 2].map((k) => col(k) / d);
+  const rss = t.reduce((acc, x, i) => acc + (y[i] - (a + b * x + c * x * x)) ** 2, 0);
+  // Var(c) = sigma^2 * (M^-1)[2][2] = sigma^2 * cofactor(2,2) / det.
+  const cof = m[0][0] * m[1][1] - m[0][1] * m[1][0];
+  const se = Math.sqrt(((rss / (t.length - 3)) * cof) / d);
+  return { c: 2 * c, se: 2 * se }; // second derivative = acceleration
+}
+// Proposal risk levels (section 4.2), adapted to the data available:
+//   priority: change-point AND acceleration away from the satellite significant at 95% AND within
+//             sites.radius of a known excavation site
+//   inspect:  change-point, or >= minCluster anomalous points within clusterRadius
+//   watch:    velocity more negative than the control-area median by > 2 robust SD (MAD)
+//   baseline: everything else with enough data
+export function riskLevels(rows, event, sites = [], { minDistance = 400, siteRadius = 100, clusterRadius = 50, minCluster = 5 } = {}) {
+  const ok = usable(rows);
+  const v = ok.filter((r) => distanceMeters(r, event) > minDistance).map((r) => r.velocity).sort((a, b) => a - b);
+  const median = v.length ? v[v.length >> 1] : 0;
+  // No control area (e.g. a small import): no reference for "watch", so it is never assigned.
+  const mad = v.length ? v.map((x) => Math.abs(x - median)).sort((a, b) => a - b)[v.length >> 1] * 1.4826 : Infinity;
+  const anomalies = rows.filter((r) => r.status === "anomaly");
+  return rows.map((r) => {
+    if (r.status === "insufficient") return { ...r, level: "insufficient", accel: null };
+    const accel = acceleration(r.samples);
+    const clustered =
+      anomalies.filter((o) => distanceMeters(o, r) <= clusterRadius).length >= minCluster;
+    const nearSite = sites.some((s) => distanceMeters(s, r) <= siteRadius);
+    let level = "baseline";
+    if (median - r.velocity > 2 * mad) level = "watch";
+    if (r.status === "anomaly" || clustered) level = "inspect";
+    if (r.status === "anomaly" && accel && accel.c + 1.96 * accel.se < 0 && nearSite) level = "priority";
+    return { ...r, level, accel };
+  });
+}

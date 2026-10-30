@@ -8,3 +8,7 @@ export const samsenEvent = {
   label: "หลุมยุบถนนสามเสน",
   locationNote: "ตำแหน่งจาก coherence ที่หายไป (Sentinel-1, ±20 ม.)",
 };
+// Known excavation sites for the "priority" level (proposal 4.2: within 100 m of active digging).
+// Only the Vajira (PP19) station box is listed: OSM node 13971907534. Tunnel alignment and progress
+// would come from MRTA and are not available here.
+export const excavationSites = [{ name: "สถานีวชิรพยาบาล (PP19)", lat: 13.77964, lon: 100.50895 }];

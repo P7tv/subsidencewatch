@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { analyzePoint, clusterPoints, firstAlert, controlThreshold, eventContrast } from "../src/analysis.js";
+import { analyzePoint, clusterPoints, firstAlert, controlThreshold, eventContrast, acceleration, riskLevels } from "../src/analysis.js";
 import { validateDataset, exportCsv, csvRowsToDataset, expandCompact } from "../src/io.js";
 import { createDemo } from "../src/data.js";
 
@@ -208,4 +208,25 @@ test("compact bundles expand to a validated dataset", () => {
   assert.equal(overlay.url, "data/x.png");
   assert.throws(() => expandCompact({ ...bundle, format: "other" }), /format/i);
   assert.throws(() => expandCompact({ ...bundle, points: [["R1", 13.78, 100.51, "x", "road", [1], [80, 91]]] }), /length/i);
+});
+
+test("acceleration recovers a known quadratic", () => {
+  const samples = Array.from({ length: 30 }, (_, i) => {
+    const t = (i * 12) / 365.25;
+    return { date: new Date(Date.UTC(2024, 0, 1 + i * 12)).toISOString().slice(0, 10), los_mm: 2 - 3 * t - 4 * t * t };
+  });
+  const a = acceleration(samples);
+  assert.ok(Math.abs(a.c + 8) < 1e-6, `c=${a.c}`);
+  assert.ok(a.se < 1e-6);
+});
+
+test("risk levels: priority needs change-point, significant acceleration and an excavation site", () => {
+  const event = { lat: 13.778, lon: 100.506 };
+  const row = analyzePoint(point, "2025-12-31");
+  assert.equal(row.status, "anomaly");
+  const far = { lat: 13.9, lon: 100.6 };
+  assert.equal(riskLevels([row], event, [event])[0].level, "priority");
+  assert.equal(riskLevels([row], event, [far])[0].level, "inspect");
+  const stable = analyzePoint({ ...point, observations: observations.map((o, i) => ({ ...o, los_mm: -i * 0.2 })) }, "2025-12-31");
+  assert.equal(riskLevels([stable], event, [event])[0].level, "baseline");
 });

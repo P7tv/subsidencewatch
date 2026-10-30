@@ -36,7 +36,7 @@ def mean_corr(files):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--looks", default=config.LOOKS[0], choices=config.LOOKS)
+    parser.add_argument("--looks", default="5x1", choices=config.LOOKS)
     parser.add_argument("--top", type=int, default=5)
     args = parser.parse_args()
 

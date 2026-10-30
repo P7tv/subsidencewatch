@@ -40,9 +40,9 @@ import {
 } from "lucide";
 import Papa from "papaparse";
 import QRCode from "qrcode";
-import { analyzePoint, clusterPoints, firstAlert, controlThreshold, eventContrast } from "./analysis.js";
+import { analyzePoint, clusterPoints, firstAlert, controlThreshold, eventContrast, riskLevels } from "./analysis.js";
 import { createDemo } from "./data.js";
-import { samsenEvent as event } from "./event.js";
+import { samsenEvent as event, excavationSites } from "./event.js";
 import { validateDataset, exportCsv, csvRowsToDataset, expandCompact } from "./io.js";
 import "./style.css";
 const icons = {
@@ -124,6 +124,15 @@ const state = {
 };
 const colors = { anomaly: "#d57943", watch: "#448b80", insufficient: "#8e9a9c" };
 const names = { anomaly: "ควรตรวจเพิ่มเติม", watch: "ติดตามแนวโน้ม", insufficient: "ข้อมูลไม่พอ" };
+// Proposal 4.2 levels and actions; see riskLevels() in analysis.js.
+const levels = {
+  priority: ["Priority", "GPR ภายใน 7 วัน"],
+  inspect: ["Inspect", "GPR ภายใน 30 วัน"],
+  watch: ["Watch", "ติดตามทุกรอบภาพ"],
+  baseline: ["Baseline", "ทบทวนรายไตรมาส"],
+  insufficient: ["—", "ข้อมูลไม่พอ"],
+};
+const levelRank = { priority: 0, inspect: 1, watch: 2, baseline: 3, insufficient: 4 };
 const PLAY_MS = 450; // ~25 s through the 57 playable real acquisitions
 let allDates = [],
   results = [],
@@ -277,7 +286,9 @@ function setOverlay(show, focus = false) {
   createIcons({ icons });
 }
 function sortedRows() {
-  return [...results].sort((a, b) => (b.score ?? -1) - (a.score ?? -1) || a.id.localeCompare(b.id));
+  return [...results].sort(
+    (a, b) => levelRank[a.level] - levelRank[b.level] || (b.score ?? -1) - (a.score ?? -1) || a.id.localeCompare(b.id),
+  );
 }
 function badge(p) {
   return `<span class="badge ${p.status}"><span></span>${names[p.status]}</span>`;
@@ -299,6 +310,7 @@ function render() {
     state.contrast = null;
     results = base;
   }
+  results = riskLevels(results, event, excavationSites);
   if (!results.some((r) => r.id === state.selected)) state.selected = results[0]?.id;
   const anomalies = results.filter((p) => p.status === "anomaly"),
     good = results.filter((p) => p.status !== "insufficient"),
@@ -434,7 +446,7 @@ function renderDetail() {
   }
   const raw = state.dataset.points.find((r) => r.id === p.id);
   $("#point-detail").innerHTML =
-    `<div class="point-intro"><div><span class="point-id">${esc(p.id)}</span>${badge(p)}</div><h3>${esc(p.label)}</h3><p>${p.lat.toFixed(5)}° N &nbsp; ${p.lon.toFixed(5)}° E</p></div><div class="detail-metrics"><div><span>LOS velocity</span><strong>${p.velocity == null ? "—" : p.velocity.toFixed(1)}<small>mm/yr</small></strong></div><div><span>Mean coherence</span><strong>${p.coherence == null ? "—" : p.coherence.toFixed(2)}<small>${p.samples.length} วันผ่าน QC</small></strong></div></div><div class="chart-section"><div class="chart-head"><h4>การเคลื่อนตัวสะสม</h4><span>LOS · mm</span></div>${chart(raw, p)}<div class="chart-key"><span><b></b>ผ่าน QC</span><span><b class="faded"></b>ไม่ผ่าน QC</span>${p.baseline ? `<span><i class="key-baseline"></i>แนวโน้มเดิม</span>` : ""}${eventInRange() ? `<span><i class="key-event"></i>วันเกิดเหตุ</span>` : ""}</div><p class="chart-note">ค่าลบ = เคลื่อนออกจากดาวเทียม</p></div><div class="evidence-box ${p.status}"><div>${icon(p.status === "anomaly" ? "scan-eye" : p.status === "insufficient" ? "circle-help" : "activity")}<strong>${p.status === "anomaly" ? "พบสัญญาณที่ควรตรวจสอบ" : p.status === "insufficient" ? "หลักฐานยังไม่เพียงพอ" : "ยังไม่พบจุดเปลี่ยนตามเกณฑ์"}</strong></div><p>${p.status === "anomaly" ? `CUSUM เกินเกณฑ์ครั้งแรก ${fmtDate(p.changeDate)} · ควรตรวจเทียบกับจุดข้างเคียงและข้อมูลภาคพื้น` : p.status === "insufficient" ? `มี ${p.samples.length} จาก ${p.available} วันถ่ายที่ผ่าน QC ต้องมีอย่างน้อย 8 วัน จึงยังสรุปแนวโน้มไม่ได้` : "ติดตามการเปลี่ยนแปลงต่อเนื่อง ผลนี้ไม่ได้ยืนยันความปลอดภัยของพื้นที่"}</p></div><div class="context-row">${icon("landmark")}<span>${contextName(p.context)}</span><span>${p.score == null ? "—" : `คะแนนจัดคิว ${p.score}/100`}</span></div><div class="settings"><button id="settings-toggle" class="text-button">${icon("sliders-horizontal")} เกณฑ์การวิเคราะห์ ${icon("chevron-down")}</button><div id="settings-body" hidden><label>Coherence ขั้นต่ำ <output id="qc-value">${state.minCoherence.toFixed(2)}</output><input type="range" id="qc-setting" min=".3" max=".95" step=".05" value="${state.minCoherence}"></label><label>เกณฑ์ CUSUM <select id="sensitivity-setting"><option value="auto" ${state.calibrate ? "selected" : ""}>อัตโนมัติ · พื้นที่ควบคุมเตือนผิด 5%</option><option value="3" ${!state.calibrate && state.sensitivity === 3 ? "selected" : ""}>3 · ไวต่อการเปลี่ยนแปลง</option><option value="4" ${!state.calibrate && state.sensitivity === 4 ? "selected" : ""}>4 · ค่าเริ่มต้น</option><option value="6" ${!state.calibrate && state.sensitivity === 6 ? "selected" : ""}>6 · ต้องการหลักฐานมากขึ้น</option></select></label><p>${state.calibrate ? `เกณฑ์ตอนนี้ ${state.threshold.toFixed(1)} · ปรับจากจุดที่ห่างหลุมเกิน 400 ม. ณ วันที่เลือก` : "ค่าทดลอง · ยังไม่สอบเทียบกับเหตุการณ์จริง"}</p></div></div>`;
+    `<div class="point-intro"><div><span class="point-id">${esc(p.id)}</span>${badge(p)}</div><h3>${esc(p.label)}</h3><p>${p.lat.toFixed(5)}° N &nbsp; ${p.lon.toFixed(5)}° E</p></div><div class="detail-metrics"><div><span>LOS velocity</span><strong>${p.velocity == null ? "—" : p.velocity.toFixed(1)}<small>mm/yr</small></strong></div><div><span>Mean coherence</span><strong>${p.coherence == null ? "—" : p.coherence.toFixed(2)}<small>${p.samples.length} วันผ่าน QC</small></strong></div></div><div class="chart-section"><div class="chart-head"><h4>การเคลื่อนตัวสะสม</h4><span>LOS · mm</span></div>${chart(raw, p)}<div class="chart-key"><span><b></b>ผ่าน QC</span><span><b class="faded"></b>ไม่ผ่าน QC</span>${p.baseline ? `<span><i class="key-baseline"></i>แนวโน้มเดิม</span>` : ""}${eventInRange() ? `<span><i class="key-event"></i>วันเกิดเหตุ</span>` : ""}</div><p class="chart-note">ค่าลบ = เคลื่อนออกจากดาวเทียม</p></div><div class="evidence-box ${p.status}"><div>${icon(p.status === "anomaly" ? "scan-eye" : p.status === "insufficient" ? "circle-help" : "activity")}<strong>${p.status === "anomaly" ? "พบสัญญาณที่ควรตรวจสอบ" : p.status === "insufficient" ? "หลักฐานยังไม่เพียงพอ" : "ยังไม่พบจุดเปลี่ยนตามเกณฑ์"}</strong></div><p>${p.status === "anomaly" ? `CUSUM เกินเกณฑ์ครั้งแรก ${fmtDate(p.changeDate)} · ควรตรวจเทียบกับจุดข้างเคียงและข้อมูลภาคพื้น` : p.status === "insufficient" ? `มี ${p.samples.length} จาก ${p.available} วันถ่ายที่ผ่าน QC ต้องมีอย่างน้อย 8 วัน จึงยังสรุปแนวโน้มไม่ได้` : "ติดตามการเปลี่ยนแปลงต่อเนื่อง ผลนี้ไม่ได้ยืนยันความปลอดภัยของพื้นที่"}</p></div><div class="context-row">${icon("landmark")}<span>${contextName(p.context)}</span><span>${p.score == null ? "—" : `คะแนนจัดคิว ${p.score}/100`}</span></div><div class="context-row"><span class="level ${p.level}">${levels[p.level][0]}</span><span>${levels[p.level][1]}${p.accel ? ` · ความเร่ง ${p.accel.c.toFixed(1)} ± ${(1.96 * p.accel.se).toFixed(1)} mm/yr²` : ""}</span></div><div class="settings"><button id="settings-toggle" class="text-button">${icon("sliders-horizontal")} เกณฑ์การวิเคราะห์ ${icon("chevron-down")}</button><div id="settings-body" hidden><label>Coherence ขั้นต่ำ <output id="qc-value">${state.minCoherence.toFixed(2)}</output><input type="range" id="qc-setting" min=".3" max=".95" step=".05" value="${state.minCoherence}"></label><label>เกณฑ์ CUSUM <select id="sensitivity-setting"><option value="auto" ${state.calibrate ? "selected" : ""}>อัตโนมัติ · พื้นที่ควบคุมเตือนผิด 5%</option>${state.source === "real" ? "" : `<option value="3" ${!state.calibrate && state.sensitivity === 3 ? "selected" : ""}>3 · ไวต่อการเปลี่ยนแปลง</option><option value="4" ${!state.calibrate && state.sensitivity === 4 ? "selected" : ""}>4 · ค่าเริ่มต้น</option><option value="6" ${!state.calibrate && state.sensitivity === 6 ? "selected" : ""}>6 · ต้องการหลักฐานมากขึ้น</option>`}</select></label>${state.source === "real" ? "<p>ข้อมูลจริงใช้เกณฑ์อัตโนมัติเท่านั้น: เกณฑ์คงที่ทำให้กว่าครึ่งของจุดถูกจัดเป็นผิดปกติ</p>" : ""}<p>${state.calibrate ? `เกณฑ์ตอนนี้ ${state.threshold.toFixed(1)} · ปรับจากจุดที่ห่างหลุมเกิน 400 ม. ณ วันที่เลือก` : "ค่าทดลอง · ยังไม่สอบเทียบกับเหตุการณ์จริง"}</p></div></div>`;
   $("#settings-toggle").onclick = () => ($("#settings-body").hidden = !$("#settings-body").hidden);
   $("#qc-setting").onchange = (e) => {
     state.minCoherence = Number(e.target.value);
@@ -490,11 +502,11 @@ function chart(raw, p) {
 }
 function table(rows, limit) {
   if (!rows.length) return '<div class="empty">ยังไม่มีจุดที่ตรงกับเงื่อนไข ณ วันที่เลือก</div>';
-  return `<div class="table-scroll"><table><thead><tr><th>จุดวัด / บริเวณ</th><th>สถานะ</th><th>LOS velocity</th><th>คุณภาพเฉลี่ย</th><th>คะแนนจัดคิว</th><th>หลักฐานถึง</th><th></th></tr></thead><tbody>${rows
+  return `<div class="table-scroll"><table><thead><tr><th>จุดวัด / บริเวณ</th><th>สถานะ</th><th>ระดับ</th><th>LOS velocity</th><th>คุณภาพเฉลี่ย</th><th>คะแนนจัดคิว</th><th>หลักฐานถึง</th><th></th></tr></thead><tbody>${rows
     .slice(0, limit ?? rows.length)
     .map(
       (p) =>
-        `<tr><td><button class="point-select" data-point="${esc(p.id)}">${esc(p.id)}<small>${esc(p.label)}</small></button></td><td>${badge(p)}</td><td class="mono">${p.velocity == null ? "—" : p.velocity.toFixed(1)} <span class="unit">mm/yr</span></td><td><div class="coherence-cell"><span class="meter"><b style="width:${(p.coherence ?? 0) * 100}%"></b></span>${p.coherence?.toFixed(2) ?? "—"}</div></td><td><span class="score">${p.score ?? "—"}</span><span class="unit">${p.score != null ? "/ 100" : ""}</span></td><td class="date-cell">${shortDate(cutoff())}</td><td><button class="icon-button" data-point="${esc(p.id)}" aria-label="ดูจุด ${esc(p.id)}">${icon("arrow-up-right")}</button></td></tr>`,
+        `<tr><td><button class="point-select" data-point="${esc(p.id)}">${esc(p.id)}<small>${esc(p.label)}</small></button></td><td>${badge(p)}</td><td><span class="level ${p.level}" title="${levels[p.level][1]}">${levels[p.level][0]}</span></td><td class="mono">${p.velocity == null ? "—" : p.velocity.toFixed(1)} <span class="unit">mm/yr</span></td><td><div class="coherence-cell"><span class="meter"><b style="width:${(p.coherence ?? 0) * 100}%"></b></span>${p.coherence?.toFixed(2) ?? "—"}</div></td><td><span class="score">${p.score ?? "—"}</span><span class="unit">${p.score != null ? "/ 100" : ""}</span></td><td class="date-cell">${shortDate(cutoff())}</td><td><button class="icon-button" data-point="${esc(p.id)}" aria-label="ดูจุด ${esc(p.id)}">${icon("arrow-up-right")}</button></td></tr>`,
     )
     .join("")}</tbody></table></div>`;
 }
@@ -549,6 +561,10 @@ function exportReport() {
     lat: p.lat,
     lon: p.lon,
     status: p.status,
+    risk_level: p.level,
+    risk_action: levels[p.level][1],
+    acceleration_mm_yr2: p.accel ? Number(p.accel.c.toFixed(2)) : "",
+    acceleration_se: p.accel ? Number(p.accel.se.toFixed(2)) : "",
     los_velocity_mm_yr: p.velocity == null ? "" : Number(p.velocity.toFixed(3)),
     mean_coherence: p.coherence,
     accepted_observations: p.samples.length,
