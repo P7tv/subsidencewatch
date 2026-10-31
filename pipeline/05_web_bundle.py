@@ -85,10 +85,10 @@ def main():
     args = parser.parse_args()
 
     OUT.mkdir(parents=True, exist_ok=True)
-    dataset = json.loads((HERE / "data" / f"samsen-insar-{args.looks}.json").read_text())
+    dataset = json.loads((config.DATA / f"samsen-insar-{args.looks}.json").read_text())
     bundle = compact(dataset)
     bundle["overlay"] = overlay(args.looks)
-    path = OUT / "samsen-real.json"
+    path = OUT / config.BUNDLE
     path.write_text(json.dumps(bundle, ensure_ascii=False, separators=(",", ":")))
     print(f"{len(bundle['points'])} points x {len(bundle['dates'])} dates -> {path} ({path.stat().st_size / 1e6:.1f} MB)")
     print(f"overlay -> {OUT / 'coherence-loss.png'} bounds {bundle['overlay']['bounds']}")

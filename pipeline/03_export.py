@@ -1,11 +1,13 @@
 """Export a MintPy time series to SubsidenceWatch's import JSON.
 
-.venv/bin/python 03_export.py mintpy_10x2 ../public/samsen-insar-10x2.json
+.venv/bin/python 03_export.py mintpy_5x1 data/samsen-insar-5x1.json
 
 - LOS: MintPy is positive toward the satellite, so metres * 1000 already matches the app's
   "negative = away" convention.
 - Per-acquisition coherence for date d is the mean coherence of pairs whose later date is d
-  (the first date uses its outgoing pairs), so it never depends on later acquisitions.
+  (the first date uses its outgoing pairs), so only the first date depends on a later acquisition.
+  Note the LOS itself comes from one MintPy inversion over the whole pre-event stack, so the app's
+  date cutoff limits which values are used, not which data shaped them.
 - Context comes from OpenStreetMap (cached in data/osm.json): hospital grounds, major roads, buildings.
 """
 
@@ -23,7 +25,7 @@ from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
 import config
 
-DATA = Path(__file__).parent / "data"
+DATA = config.DATA
 ROAD_TYPES = "trunk|primary|secondary|tertiary"
 
 
@@ -49,7 +51,8 @@ def per_date_coherence(dates, pair_dates, coherence):
     out = np.zeros((len(dates),) + coherence.shape[1:], dtype=np.float32)
     for i, d in enumerate(dates):
         idx = [k for k, (a, b) in enumerate(pair_dates) if b == d] or [k for k, (a, b) in enumerate(pair_dates) if a == d]
-        out[i] = np.nanmean(coherence[idx], axis=0)
+        # No kept pair for a date gives coherence 0 (fails QC) instead of NaN, which JSON cannot hold.
+        out[i] = np.nan_to_num(np.nanmean(coherence[idx], axis=0), nan=0.0) if idx else 0.0
     return out
 
 
@@ -164,7 +167,7 @@ def main():
             "name": f"Sentinel-1 burst {config.BURST_ID} · HyP3 ISCE2 + MintPy ({args.mintpy_dir.name})",
             "kind": "insar",
             "reference": (
-                f"Descending track 62, LOS, {abs(dx):.0f} m pixels. Reference pixel {ref}, reference date {iso(attrs.get('REF_DATE', dates[0].replace('-', '')))}. "
+                f"{config.TRACK_LABEL}, LOS, {abs(dx):.0f} m pixels. Reference pixel {ref}, reference date {iso(attrs.get('REF_DATE', dates[0].replace('-', '')))}. "
                 f"{ts_file}; no tropospheric correction; temporal coherence >= {args.min_tcoh}. "
                 f"Acquisitions {dates[0]} to {dates[-1]} (UTC dates; pre-event only)."
             ),

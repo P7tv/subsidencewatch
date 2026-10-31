@@ -4,6 +4,7 @@ dist/
 .openai/*.tar.gz
 pipeline/.venv/
 pipeline/data/
+pipeline/data-asc/
 pipeline/tools/
 pipeline/mintpy_*/
 __pycache__/
